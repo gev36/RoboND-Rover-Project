@@ -1,4 +1,4 @@
-# Do the necessary imports
+## Do the necessary imports
 import argparse
 import shutil
 import base64
@@ -51,6 +51,8 @@ class RoverState():
         self.brake = 0 # Current brake value
         self.nav_angles = None # Angles of navigable terrain pixels
         self.nav_dists = None # Distances of navigable terrain pixels
+        self.rock_angle = None
+        self.rock_dist = None
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 0.2 # Throttle setting when accelerating
@@ -60,7 +62,9 @@ class RoverState():
         # when you can keep going and when you should stop.  Feel free to
         # get creative in adding new fields or modifying these!
         self.stop_forward = 50 # Threshold to initiate stopping
+        self.stop_forward_distance = 15  # Avg. distance threshold to initiate stopping
         self.go_forward = 500 # Threshold to go forward again
+        self.stuck_counter =0 ###########
         self.max_vel = 2 # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps
@@ -71,10 +75,13 @@ class RoverState():
         # obstacles and rock samples
         self.worldmap = np.zeros((200, 200, 3), dtype=np.float) 
         self.samples_pos = None # To store the actual sample positions
+        self.samples_to_find = 6 # To store the initial count of samples ####
         self.samples_found = 0 # To count the number of samples found
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
+        self.count = 0   ######
+        self.start_pos = None   #######
 # Initialize our rover 
 Rover = RoverState()
 
@@ -114,14 +121,21 @@ def telemetry(sid, data):
             out_image_string1, out_image_string2 = create_output_images(Rover)
 
             # The action step!  Send commands to the rover!
-            commands = (Rover.throttle, Rover.brake, Rover.steer)
-            send_control(commands, out_image_string1, out_image_string2)
- 
+            
+            # Don't send both of these, they both trigger the simulator
+            # to send back new telemetry so we must only send one
+            # back in respose to the current telemetry data.
+
             # If in a state where want to pickup a rock send pickup command
             if Rover.send_pickup and not Rover.picking_up:
                 send_pickup()
                 # Reset Rover flags
                 Rover.send_pickup = False
+            else:
+                # Send commands to the rover!
+                commands = (Rover.throttle, Rover.brake, Rover.steer)
+                send_control(commands, out_image_string1, out_image_string2)
+
         # In case of invalid telemetry, send null commands
         else:
 
@@ -184,7 +198,7 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    #os.system('rm -rf IMG_stream/*')
+    os.system('rm -rf IMG_stream/*')
     if args.image_folder != '':
         print("Creating image folder at {}".format(args.image_folder))
         if not os.path.exists(args.image_folder):
