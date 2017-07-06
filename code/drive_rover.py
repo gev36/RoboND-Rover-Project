@@ -1,4 +1,4 @@
-## Do the necessary imports
+# Do the necessary imports
 import argparse
 import shutil
 import base64
@@ -52,7 +52,7 @@ class RoverState():
         self.nav_angles = None # Angles of navigable terrain pixels
         self.nav_dists = None # Distances of navigable terrain pixels
         self.rock_angle = None
-        self.rock_dist = None
+        self.rock_dist = None        
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 0.2 # Throttle setting when accelerating
@@ -75,13 +75,12 @@ class RoverState():
         # obstacles and rock samples
         self.worldmap = np.zeros((200, 200, 3), dtype=np.float) 
         self.samples_pos = None # To store the actual sample positions
-        self.samples_to_find = 6 # To store the initial count of samples ####
-        self.samples_found = 0 # To count the number of samples found
+        self.samples_to_find = 0 # To store the initial count of samples
+        self.samples_located = 0 # To store number of samples located on map
+        self.samples_collected = 0 # To count the number of samples collected
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
-        self.count = 0   ######
-        self.start_pos = None   #######
 # Initialize our rover 
 Rover = RoverState()
 
@@ -121,7 +120,7 @@ def telemetry(sid, data):
             out_image_string1, out_image_string2 = create_output_images(Rover)
 
             # The action step!  Send commands to the rover!
-            
+ 
             # Don't send both of these, they both trigger the simulator
             # to send back new telemetry so we must only send one
             # back in respose to the current telemetry data.
@@ -198,7 +197,7 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    os.system('rm -rf IMG_stream/*')
+    #os.system('rm -rf IMG_stream/*')
     if args.image_folder != '':
         print("Creating image folder at {}".format(args.image_folder))
         if not os.path.exists(args.image_folder):
